@@ -38,14 +38,15 @@ static void DrawOnCanvas(Canvas *canvas) {
     float dot_y = sin(a * 2 * M_PI) * r;
     canvas->SetPixel(center_x + dot_x, center_y + dot_y,
                      255, 0, 0);
-    usleep(1 * 1000);  // wait a little to slow down things.
+    usleep(1 * 500);  // wait a little to slow down things.
   }
 }
 
 int main(int argc, char *argv[]) {
   RGBMatrix::Options defaults;
   defaults.hardware_mapping = "regular";  // or e.g. "adafruit-hat"
-  defaults.rows = 32;
+  defaults.rows = 64;
+  defaults.cols = 64;
   defaults.chain_length = 1;
   defaults.parallel = 1;
   defaults.show_refresh_rate = true;

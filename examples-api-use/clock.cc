@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::string> format_lines;
   Color color(255, 255, 0);
+  Color color2(255, 0, 255);
   Color bg_color(0, 0, 0);
   Color outline_color(0,0,0);
   bool with_outline = false;
@@ -80,6 +81,7 @@ int main(int argc, char *argv[]) {
   int y_orig = 0;
   int letter_spacing = 0;
   int line_spacing = 0;
+  int minute = 0;
 
   int opt;
   while ((opt = getopt(argc, argv, "x:y:f:C:B:O:s:S:d:")) != -1) {
@@ -115,7 +117,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (format_lines.empty()) {
-    format_lines.push_back("%H:%M");
+    format_lines.push_back("%H:%M:%S");
   }
 
   if (bdf_font_file == NULL) {
@@ -165,6 +167,13 @@ int main(int argc, char *argv[]) {
     offscreen->Fill(bg_color.r, bg_color.g, bg_color.b);
     localtime_r(&next_time.tv_sec, &tm);
 
+    // Blink
+    //if ( next_time.tv_sec % 2 == 0 ){
+    //    format_lines.assign("%H:%M");
+    //} else {
+    //    format_lines.assign("%H %M");
+    //}
+
     int line_offset = 0;
     for (const std::string &line : format_lines) {
       strftime(text_buffer, sizeof(text_buffer), line.c_str(), &tm);
@@ -188,6 +197,17 @@ int main(int argc, char *argv[]) {
     offscreen = matrix->SwapOnVSync(offscreen);
 
     next_time.tv_sec += 1;
+
+    // 1分に1回の処理
+    if (minute != tm.tm_min ){
+        minute = tm.tm_min;
+
+        system("sudo python3 /usr/local/bin/sht31.py");
+    }
+
+    // char s[100];
+    // strftime(s, 100, "%Y-%m-%d %H:%M:%S\n", &tm);
+    // fprintf(stderr, s);
   }
 
   // Finished. Shut down the RGB matrix.

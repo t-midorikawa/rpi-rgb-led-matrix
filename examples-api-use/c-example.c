@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   int x, y, i;
 
   memset(&options, 0, sizeof(options));
-  options.rows = 32;
+  options.rows = 64;
   options.chain_length = 1;
 
   /* This supports all the led commandline options. Try --led-help */
