@@ -18,6 +18,8 @@
 
 #include <vector>
 #include <string>
+#include <fstream>
+#include <iostream>
 
 using namespace rgb_matrix;
 
@@ -70,8 +72,9 @@ int main(int argc, char *argv[]) {
   // We accept multiple format lines
 
   std::vector<std::string> format_lines;
-  Color color(255, 255, 0);
-  Color color2(255, 0, 255);
+  Color color(255, 255, 255);
+  Color color2(255, 255, 128);
+  Color color3(192,192,255);
   Color bg_color(0, 0, 0);
   Color outline_color(0,0,0);
   bool with_outline = false;
@@ -159,6 +162,8 @@ int main(int argc, char *argv[]) {
   next_time.tv_sec = time(NULL);
   next_time.tv_nsec = 0;
   struct tm tm;
+  std::string temp;
+  std::string humi;
 
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
@@ -167,7 +172,7 @@ int main(int argc, char *argv[]) {
     offscreen->Fill(bg_color.r, bg_color.g, bg_color.b);
     localtime_r(&next_time.tv_sec, &tm);
 
-    // Blink
+    // 点滅させようと思った残骸
     //if ( next_time.tv_sec % 2 == 0 ){
     //    format_lines.assign("%H:%M");
     //} else {
@@ -191,6 +196,44 @@ int main(int argc, char *argv[]) {
     }
 
     // Wait until we're ready to show it.
+    //clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
+
+    // Atomic swap with double buffer
+    //offscreen = matrix->SwapOnVSync(offscreen);
+
+    //next_time.tv_sec += 1;
+
+    // 1分に1回の処理
+    if (minute != tm.tm_min ){
+      minute = tm.tm_min;
+
+      // 温度・湿度をファイルから読み込み
+      std::ifstream ifs("/tmp/sht31_temp.dat");
+      ifs >> temp;
+      temp += "°C";
+      ifs.close();
+      ifs.open("/tmp/sht31_humi.dat");
+      ifs >> humi;
+      humi += "%";
+    }
+
+    // 温度表示
+    const char* ctemp = temp.c_str();
+    rgb_matrix::DrawText(offscreen, font,
+                         x, y + font.baseline() + line_offset,
+                         color2, NULL, ctemp,
+                         letter_spacing);
+    line_offset += font.height() + line_spacing;
+
+    // 湿度表示
+    const char* chumi = humi.c_str();
+    rgb_matrix::DrawText(offscreen, font,
+                         x, y + font.baseline() + line_offset,
+                         color3, NULL, chumi,
+                         letter_spacing);
+    line_offset += font.height() + line_spacing;
+
+    // Wait until we're ready to show it.
     clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &next_time, NULL);
 
     // Atomic swap with double buffer
@@ -198,16 +241,6 @@ int main(int argc, char *argv[]) {
 
     next_time.tv_sec += 1;
 
-    // 1分に1回の処理
-    if (minute != tm.tm_min ){
-        minute = tm.tm_min;
-
-        system("sudo python3 /usr/local/bin/sht31.py");
-    }
-
-    // char s[100];
-    // strftime(s, 100, "%Y-%m-%d %H:%M:%S\n", &tm);
-    // fprintf(stderr, s);
   }
 
   // Finished. Shut down the RGB matrix.
