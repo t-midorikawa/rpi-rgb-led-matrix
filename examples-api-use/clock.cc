@@ -20,6 +20,9 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <sys/stat.h>
+#include <chrono>
+#include <thread>
 
 using namespace rgb_matrix;
 
@@ -59,6 +62,22 @@ static bool FullSaturation(const Color &c) {
   return (c.r == 0 || c.r == 255)
     && (c.g == 0 || c.g == 255)
     && (c.b == 0 || c.b == 255);
+}
+
+// [指定ファイルの最終更新日時が現在より5分以上前ならfalseを返すルーチン]とAI Programmerに注文したらできたやつ
+bool check_file(const char *file)
+{
+  struct stat st;
+  if (stat(file, &st) == 0)
+  {
+    time_t cur_time = time(NULL);
+    time_t file_time = st.st_mtime;
+    if ((cur_time - file_time) > (5 * 60))
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 int main(int argc, char *argv[]) {
@@ -208,13 +227,23 @@ int main(int argc, char *argv[]) {
       minute = tm.tm_min;
 
       // 温度・湿度をファイルから読み込み
-      std::ifstream ifs("/tmp/sht31_temp.dat");
-      ifs >> temp;
-      temp += "°C";
-      ifs.close();
-      ifs.open("/tmp/sht31_humi.dat");
-      ifs >> humi;
-      humi += "%";
+      if (check_file("/tmp/sht31_temp.dat") != false){
+        std::ifstream ifs("/tmp/sht31_temp.dat");
+        ifs >> temp;
+        temp += "°C";
+        ifs.close();
+      }else{
+        temp = "Error!";
+      }
+
+      if (check_file("/tmp/sht31_humi.dat") != false){
+         std::ifstream ifs("/tmp/sht31_humi.dat");
+         ifs >> humi;
+         humi += "%";
+         ifs.close();
+      }else{
+         humi = "Error!";
+      }
     }
 
     // 温度表示
@@ -241,6 +270,9 @@ int main(int argc, char *argv[]) {
 
     next_time.tv_sec += 1;
 
+    // なんか待機
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
   }
 
   // Finished. Shut down the RGB matrix.
@@ -249,3 +281,15 @@ int main(int argc, char *argv[]) {
   write(STDOUT_FILENO, "\n", 1);  // Create a fresh new line after ^C on screen
   return 0;
 }
+
+//int get_timeflag() {
+//  return 1;
+//}
+
+//int main(int argc, char *argv[]) {
+//  while (1){
+//    int tflag = get_timeflag();
+//    main2(argc, argv, tflag);
+//  }
+//}
+
