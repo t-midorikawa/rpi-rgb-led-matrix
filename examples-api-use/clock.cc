@@ -94,6 +94,7 @@ int main(int argc, char *argv[]) {
   Color color(255, 255, 255);
   Color color2(255, 255, 128);
   Color color3(192,192,255);
+  Color color4(192, 255, 192);
   Color bg_color(0, 0, 0);
   Color outline_color(0,0,0);
   bool with_outline = false;
@@ -183,6 +184,7 @@ int main(int argc, char *argv[]) {
   struct tm tm;
   std::string temp;
   std::string humi;
+  std::string ppm;
 
   signal(SIGTERM, InterruptHandler);
   signal(SIGINT, InterruptHandler);
@@ -244,6 +246,12 @@ int main(int argc, char *argv[]) {
       }else{
          humi = "Error!";
       }
+
+      // 二酸化炭素濃度をファイルから読み込み
+      std::ifstream ifs("/tmp/mh-z19.dat");
+      ifs >> ppm;
+      ppm += "ppm";
+      ifs.close();
     }
 
     // 温度表示
@@ -259,6 +267,14 @@ int main(int argc, char *argv[]) {
     rgb_matrix::DrawText(offscreen, font,
                          x, y + font.baseline() + line_offset,
                          color3, NULL, chumi,
+                         letter_spacing);
+    line_offset += font.height() + line_spacing;
+
+    // 二酸化炭素濃度表示
+    const char* cppm = ppm.c_str();
+    rgb_matrix::DrawText(offscreen, font,
+                         x, y + font.baseline() + line_offset,
+                         color4, NULL, cppm,
                          letter_spacing);
     line_offset += font.height() + line_spacing;
 
